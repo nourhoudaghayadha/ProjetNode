@@ -5,5 +5,4 @@ exports.authenticateUser = (req, res, next) => {
 };
 
 exports.authorizeAdmin = (req, res, next) => {
-    // Middleware d'autorisation admin ici
-};
+helllllllllllllo};
