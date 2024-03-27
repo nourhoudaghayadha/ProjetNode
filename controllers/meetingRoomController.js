@@ -1,5 +1,5 @@
 const MeetingRoom = require('../models/meetingRoom');
-const defaultMeetingRooms = require('../defaultMeetingRooms');
+//const defaultMeetingRooms = require('../defaultMeetingRooms');
 
 
 exports.getAllMeetingRooms = async (req, res) => {
