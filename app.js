@@ -2,7 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const bcrypt = require('bcryptjs');
-
+const expressLayouts = require('express-ejs-layouts');
 const connectDB = require('../reservationsalle/Service/db'); 
 const authRouter = require('../reservationsalle/routes/authRoutes');
 const app = express();
@@ -40,6 +40,21 @@ app.use((err, req, res, next) => {
     });
   });
   
+//partie view 
+app.use(express.static('public'))
+app.use('/css',express.static(__dirname + 'public/css'))
+/*
+app.use('/js',express.static(__dirname + 'public/js'))
+app.use('/img',express.static(__dirname + 'public/img'))
+*/
+//set templatin engine
+app.use(expressLayouts);
+app.set('view engine', 'ejs');
+//navigation
+app.get('',(req,res) =>{
+    res.render('Auth/authentification')
+})
+
 
 
   module.exports = app;
