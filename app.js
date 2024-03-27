@@ -1,45 +1,47 @@
 const express = require('express');
 const mongoose = require('mongoose');
-const cors = require('cors');
-const bcrypt = require('bcryptjs');
+const dotenv = require('dotenv');
+const cors = require('cors'); // Import the cors middleware
 
-const connectDB = require('../reservationsalle/Service/db'); 
-const authRouter = require('../reservationsalle/routes/authRoutes');
+const authRoutes = require('./routes/authRoutes');
+const meetingroomRoutes = require('./routes/meetingRoomRoutes');
+const reservationRoutes = require('./routes/reservationRoutes');
+
+dotenv.config();
+
 const app = express();
 
-  //partie aka middelwqres
-  app.use(cors());
-  app.use(express.json());
+// Use middleware
+app.use(cors()); // Enable CORS
+app.use(express.json());
 
-  //route
-app.use('/api/auth',authRouter);
+// Import other routes if necessary
+app.use('/auth', authRoutes);
+app.use('/meetingroom', meetingroomRoutes);
+app.use('/reservation', reservationRoutes);
 
-//hedhy db
-connectDB() // Appelez la fonction connectDB
-  .then(() => {
-    console.log('Connected to MongoDB');
-    app.listen(4000, () => {
-      console.log(`Server listening on port 4000`);
-    });
-  })
-  .catch((err) => {
-    console.error('Error connecting to MongoDB:', err.message);
-  });
-  
-  
+// Connect to MongoDB
+const MONGODB_URI = process.env.MONGODB_URI;
+const PORT = process.env.PORT;
 
+mongoose.connect(MONGODB_URI)
+    .then(() => {
+        console.log('Connected to MongoDB');
+        app.listen(PORT, () => {
+            console.log(`Server running on port ${PORT}`);
+        });
+    })
+    .catch(err => console.error('Error connecting to MongoDB:', err));
 
- // Global error handler
+// Global error handler
 app.use((err, req, res, next) => {
     err.statusCode = err.statusCode || 500;
     err.status = err.status || 'error';
-  
+
     res.status(err.statusCode).json({
-      status: err.status,
-      message: err.message
+        status: err.status,
+        message: err.message
     });
-  });
-  
+});
 
-
-  module.exports = app;
+module.exports = app;
