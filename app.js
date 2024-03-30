@@ -14,11 +14,18 @@ const app = express();
 // Use middleware
 app.use(cors()); // Enable CORS
 app.use(express.json());
-
-// Import other routes if necessary
 app.use('/auth', authRoutes);
 app.use('/meetingroom', meetingroomRoutes);
 app.use('/reservation', reservationRoutes);
+app.use('/style', express.static(__dirname + '/Style'));
+app.set('view engine', 'ejs');
+// Import other routes if necessary
+
+
+// Define route for the root path ("/")
+app.get('/', (req, res) => {
+    res.render('home'); // Render the "home" EJS template
+});
 
 // Connect to MongoDB
 const MONGODB_URI = process.env.MONGODB_URI;
