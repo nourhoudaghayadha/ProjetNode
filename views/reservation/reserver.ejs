@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reserve a Meeting Room</title>
+</head>
+<body>
+    <h1>Reserve a Meeting Room</h1>
+    <form action="/reservation" method="POST">
+        <label for="room">Select Room:</label>
+        <select id="room" name="room">
+            <option value="room1">Room 1</option>
+            <option value="room2">Room 2</option>
+            <!-- Add more room options as needed -->
+        </select>
+        <br><br>
+        <label for="date">Date:</label>
+        <input type="date" id="date" name="date" required>
+        <br><br>
+        <label for="startTime">Start Time:</label>
+        <input type="time" id="startTime" name="startTime" required>
+        <br><br>
+        <label for="endTime">End Time:</label>
+        <input type="time" id="endTime" name="endTime" required>
+        <br><br>
+        <button type="submit">Reserve</button>
+    </form>
+</body>
+</html>
