@@ -6,81 +6,72 @@ const jwt = require('jsonwebtoken');
 // Register user
 exports.signup = async (req, res, next) => {
     try {
-        const user = await User.findOne({ email: req.body.email });
+        const { name, email, password } = req.body;
 
-        if (user) {
-            return next(new createError('User already exists!', 400));
+        // Vérification si l'utilisateur existe déjà
+        const userExists = await User.findOne({ email: email });
+        if (userExists) {
+            return res.status(400).json({ message: 'User already exists!' });
         }
+       
+        // Création d'un nouvel utilisateur
+        const newUser = new User({
+            name: name,
+            email: email,
+            password: password
+        });
 
-        // Directly pass the password to the User.create method
-        const newUser = await User.create(req.body);
+        await newUser.save();
 
-        // JWT 
-// Dans les méthodes signup et login
-const token = jwt.sign({ id: newUser._id, role: newUser.role }, process.env.JWT_SECRET, {
-    expiresIn: '90d',
-});
+        // Création du token JWT
+        const token = jwt.sign({ id: newUser._id, role: newUser.role }, process.env.JWT_SECRET, {
+            expiresIn: '90d'
+        });
 
-
+        // Réponse avec les informations de l'utilisateur et le token
         res.status(201).json({
             status: 'success',
-            message: 'User registered successfully',
-            token,
+            token: token,
             user: {
                 _id: newUser._id,
                 name: newUser.name,
                 email: newUser.email,
-                role: newUser.role,
-            },
+                role: newUser.role
+            }
         });
 
     } catch (error) {
-        next(error);
+        // Gestion des erreurs
+        console.error(error);
+        res.status(500).json({ message: 'Error signing up the user.' });
     }
-};
-
-// Login user
+};// Login user
 exports.login = async (req, res, next) => {
     try {
-        const { email, password } = req.body; // Extract email and password from body
+        const { email, password } = req.body;
 
         if (!email || !password) {
-            return next(new createError('Email and password are required', 400));
+            return res.render('Auth/authentification', { error: 'Email and password are required' });
         }
 
         const user = await User.findOne({ email });
-
         if (!user) {
-            return next(new createError('User not found', 404));
+            return res.render('Auth/authentification', { error: 'User not found' });
         }
 
-        // Compare provided password with stored hashed password
-        const isPasswordValid = await bcrypt.compare(password, user.password); // Ensure user.password is the hashed password
-
+        const isPasswordValid = await bcrypt.compare(password, user.password);
         if (!isPasswordValid) {
-            return next(new createError('Invalid email or password', 401));
+            return res.render('Auth/authentification', { error: 'Invalid email or password' });
         }
 
-
-// Dans les méthodes signup et login
-const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, {
-    expiresIn: '90d',
-});
-
-
-        res.status(200).json({
-            status: 'success',
-            token,
-            message: 'Logged in successfully',
-            user: {
-                _id: user._id,
-                name: user.name,
-                email: user.email,
-                role: user.role,
-            },
+        const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, {
+            expiresIn: '90d',
         });
 
+        res.cookie('token', token, { httpOnly: true });
+        res.redirect('/meetingroom'); // Assurez-vous que cette route existe
     } catch (error) {
-        next(error);
+        console.error(error);
+        res.status(500).render('Auth/authentification', { error: 'An error occurred during the login process' });
     }
 };
