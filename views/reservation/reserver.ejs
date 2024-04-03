@@ -4,16 +4,38 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Reserve a Meeting Room</title>
+    <script>
+        window.onload = function() {
+            // Get current date and time
+            var now = new Date();
+            var day = ("0" + now.getDate()).slice(-2);
+            var month = ("0" + (now.getMonth() + 1)).slice(-2);
+            var today = now.getFullYear()+"-"+(month)+"-"+(day) ;
+
+            var hours = ("0" + now.getHours()).slice(-2);
+            var minutes = ("0" + now.getMinutes()).slice(-2);
+            var currentTime = hours + ":" + minutes;
+
+            // Set the value of the date input to the current date
+            document.getElementById('date').value = today;
+
+            // Assuming you want to set the start time as the current time
+            // Adjust accordingly if you need a different default value
+            document.getElementById('startTime').value = currentTime;
+
+            // Optionally set the end time, for example, 1 hour ahead
+            var endTime = new Date(now.getTime() + 60*60000); // Adds 60 minutes to the current time
+            var endHours = ("0" + endTime.getHours()).slice(-2);
+            var endMinutes = ("0" + endTime.getMinutes()).slice(-2);
+            var newEndTime = endHours + ":" + endMinutes;
+            document.getElementById('endTime').value = newEndTime;
+        }
+    </script>
 </head>
 <body>
     <h1>Reserve a Meeting Room</h1>
-    <form action="/reservation" method="POST">
-        <label for="room">Select Room:</label>
-        <select id="room" name="room">
-            <option value="room1">Room 1</option>
-            <option value="room2">Room 2</option>
-            <!-- Add more room options as needed -->
-        </select>
+    <form action="/reservation/create" method="POST">
+        
         <br><br>
         <label for="date">Date:</label>
         <input type="date" id="date" name="date" required>

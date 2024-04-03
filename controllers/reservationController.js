@@ -12,37 +12,75 @@ const fetchActiveReservations = async (currentTime) => {
         endTime: { $gt: currentTime.toDate() }
     });
 };
+exports.findRoomsByDate = async (req, res) => {
+    try {
+        // Extracting the date, start time, and end time from the request body
+        const { selectedDate, selectedTime, endTime } = req.body;
+
+        // Check for missing input
+        if (!selectedDate || !selectedTime || !endTime) {
+            return res.status(400).send("All fields (date, start time, and end time) are required.");
+        }
+
+        // Combining the date with start and end times and converting to Moment.js objects
+        const startDateTime = moment(`${selectedDate}T${selectedTime}`);
+        const endDateTime = moment(`${selectedDate}T${endTime}`);
+
+        // Validation of Moment.js objects
+        if (!startDateTime.isValid() || !endDateTime.isValid()) {
+            return res.status(400).send("Invalid date or time format.");
+        }
+
+        // Finding reservations that overlap with the desired meeting time
+        const overlappingReservations = await Reservation.find({
+            $or: [
+                { startTime: { $lte: endDateTime.toDate() }, endTime: { $gte: startDateTime.toDate() } },
+            ],
+        });
+
+        // Extracting the room IDs of these reservations
+        const reservedRoomIds = overlappingReservations.map(reservation => reservation.roomId);
+
+        // Finding rooms not in the list of reservedRoomIds
+        const availableRooms = await MeetingRoom.find({
+            _id: { $nin: reservedRoomIds }
+        });
+
+        // Responding with the available rooms
+        // Adjust this according to whether you need to render a page or return JSON
+   //     res.status(200).json({ availableRooms }); // For API response
+        // For server-rendered page, use:
+        res.render('meetingRoom/availableroom', { availableRooms: availableRooms });
+
+    } catch (error) {
+        console.error("Error finding available rooms by date:", error);
+        res.status(500).send("An error occurred while finding available rooms.");
+    }
+};
 
 // Method to get all available meeting rooms for the current time
 exports.getAvailableMeetingRooms = async (req, res) => {
     try {
         const currentTime = moment.utc();
         const activeReservations = await fetchActiveReservations(currentTime);
-        console.log("Active Reservations:", activeReservations);
 
         // Extract roomIds from active reservations
         const reservedRoomIds = activeReservations.map(reservation => reservation.roomId.toString());
-        console.log("Reserved Room IDs:", reservedRoomIds);
 
         // Get all meeting rooms
         const allRoomObjects = await MeetingRoom.find();
-console.log("All room objects:", allRoomObjects);
-const allRoomIds = allRoomObjects.map(room => room._id.toString()); // Convert all _id fields to strings.
-console.log("All room IDs:", allRoomIds);
 
-// Filter out rooms that are currently reserved.
-// Use allRoomIds for the comparison, as it's an array of strings now.
-const availableRooms = allRoomObjects.filter(room => !reservedRoomIds.includes(room._id.toString()));
-console.log("Available rooms:", availableRooms);
+        // Filter out rooms that are currently reserved
+        const availableRooms = allRoomObjects.filter(room => !reservedRoomIds.includes(room._id.toString()));
 
-        // Return the available meeting rooms
-        // This should be the only response sent back from this route
-        return res.status(200).json(availableRooms);
+        // Render the EJS template with the available rooms
+        res.render('meetingRoom/availableroom', { availableRooms: availableRooms });
     } catch (error) {
         console.error("Error within getAvailableMeetingRooms:", error);
-        return res.status(500).json({ error: 'An error occurred while fetching available meeting rooms' });
+        res.status(500).send("Error loading the page");
     }
 };
+
 
 
 
@@ -76,6 +114,23 @@ const checkForConflictingReservations = async (roomId, startTime, endTime) => {
     }
 };
 
+// exports.showReservationForm = async (req, res) => {
+//     try {
+//         const roomId = req.params.roomId;
+//         // Assuming the Room ID is valid and exists in your DB, fetch the room details
+//         const room = await MeetingRoom.findById(roomId);
+
+//         if (!room) {
+//             return res.status(404).send("Room not found");
+//         }
+
+//         // Render the reservation form template with room details
+//         res.render('reservation/form', { room });
+//     } catch (error) {
+//         console.error("Error showing reservation form:", error);
+//         res.status(500).send("Error loading the reservation form.");
+//     }
+// };
 
 exports.createReservation = async (req, res) => {
     try {

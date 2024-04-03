@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Select Date and Time</title>
+</head>
+<body>
+    <h1>Select Date and Time for the Meeting</h1>
+    <form action="/reservation/reserve/by-date" method="POST">
+        <label for="selectedDate">Select Date:</label>
+        <input type="date" id="selectedDate" name="selectedDate" required>
+        
+        <label for="selectedTime">Select Time:</label>
+        <input type="time" id="selectedTime" name="selectedTime" step="300" required>
+        <!-- The step="300" attribute makes the time selectable in 5-minute intervals -->
+        <label for="endTime">End Time:</label>
+        <input type="time" id="endTime" name="endTime" required>
+    
+        <button type="submit">Check Availability</button>
+    </form>
+</body>
+</html>

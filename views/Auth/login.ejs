@@ -1,37 +1,51 @@
-<span style="font-family: verdana, geneva, sans-serif;">
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <meta charset="UTF-8">
-      <title>Cool Login form | By Code Info</title>
-      <link rel="stylesheet" href="../../Style/style.css">
-      <!-- Font Awesome Cdn Link -->
-       <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"/>
-    </head>
-    <body>
-      <div class="wrapper">
-        <h1>Hello Again!</h1>
-        <p>Welcome back you've <br> been missed!</p>
-        <form>
-          <input type="text" placeholder="Enter username">
-          <input type="password" placeholder="Password">
-          <p class="recover">
-            <a href="#">Recover Password</a>
-          </p>
+<!DOCTYPE html>
+<!-- Coding By CodingNepal - codingnepalweb.com -->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+   
+  </head>
+  <body>
+    <section class="wrapper">
+      <div class="form signup">
+        <header>Signup</header>
+        <form action="/auth/signup" method="POST">
+          <input type="text" name="name" placeholder="Full name" required />
+          <input type="email" name="email" placeholder="Email address" required />
+          <input type="password" name="password" placeholder="Password" required />
+
+          <div class="checkbox">
+            <input type="checkbox" id="signupCheck" />
+            <label for="signupCheck">I accept all terms & conditions</label>
+          </div>
+          <input type="submit" value="Signup" />
         </form>
-        <button>Sign in</button>
-        <p class="or">
-          ----- or continue with -----
-        </p>
-        <div class="icons">
-          <i class="fab fa-google"></i>
-          <i class="fab fa-github"></i>
-          <i class="fab fa-facebook"></i>
-        </div>
-        <div class="not-member">
-          Not a member? <a href="#">Register Now</a>
-        </div>
       </div>
-    </body>
-    </html>
-    </span>
+
+      <div class="form login">
+        <header>Login</header>
+        <form action="/auth/login" method="POST">
+          <input type="text" placeholder="Email address" required />
+          <input type="password" placeholder="Password" required />
+          <a href="#">Forgot password?</a>
+          <input type="submit" value="Login" />
+        </form>
+      </div>
+
+      <script>
+        const wrapper = document.querySelector(".wrapper"),
+          signupHeader = document.querySelector(".signup header"),
+          loginHeader = document.querySelector(".login header");
+
+        loginHeader.addEventListener("click", () => {
+          wrapper.classList.add("active");
+        });
+        signupHeader.addEventListener("click", () => {
+          wrapper.classList.remove("active");
+        });
+      </script>
+    </section>
+  </body>
+</html>

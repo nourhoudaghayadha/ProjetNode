@@ -9,7 +9,7 @@
     <h1>Available Meeting Rooms</h1>
     <ul>
         <% availableRooms.forEach(room => { %>
-            <li><%= room.name %></li>
+            <li><a href="/reservation/reserver/<%= room._id %>"><%= room.name %></a></li>
         <% }); %>
     </ul>
 </body>

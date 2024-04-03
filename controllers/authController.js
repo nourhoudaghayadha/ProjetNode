@@ -43,45 +43,30 @@ const token = jwt.sign({ id: newUser._id, role: newUser.role }, process.env.JWT_
 // Login user
 exports.login = async (req, res, next) => {
     try {
-        const { email, password } = req.body; // Extract email and password from body
+        const { email, password } = req.body;
 
         if (!email || !password) {
-            return next(new createError('Email and password are required', 400));
+            return res.render('Auth/login', { error: 'Email and password are required' });
         }
 
         const user = await User.findOne({ email });
-
         if (!user) {
-            return next(new createError('User not found', 404));
+            return res.render('Auth/login', { error: 'User not found' });
         }
 
-        // Compare provided password with stored hashed password
-        const isPasswordValid = await bcrypt.compare(password, user.password); // Ensure user.password is the hashed password
-
+        const isPasswordValid = await bcrypt.compare(password, user.password);
         if (!isPasswordValid) {
-            return next(new createError('Invalid email or password', 401));
+            return res.render('Auth/login', { error: 'Invalid email or password' });
         }
 
-
-// Dans les méthodes signup et login
-const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, {
-    expiresIn: '90d',
-});
-
-
-        res.status(200).json({
-            status: 'success',
-            token,
-            message: 'Logged in successfully',
-            user: {
-                _id: user._id,
-                name: user.name,
-                email: user.email,
-                role: user.role,
-            },
+        const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, {
+            expiresIn: '90d',
         });
 
+        res.cookie('token', token, { httpOnly: true });
+        res.redirect('/home'); // Assurez-vous que cette route existe
     } catch (error) {
-        next(error);
+        console.error(error);
+        res.status(500).render('Auth/login', { error: 'An error occurred during the login process' });
     }
 };
