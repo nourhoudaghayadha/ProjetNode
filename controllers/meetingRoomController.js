@@ -17,7 +17,10 @@ exports.getAllMeetingRooms = async (req, res) => {
 };
 
 exports.createMeetingRoom = async (req, res) => {
-    try {
+    try { 
+        if (!req.user || req.user.role !== 'admin') {
+        return res.status(403).json({ message: "Accès refusé. Seuls les administrateurs sont autorisés à créer des salles de réunion." });
+    }
         // Extract room details from the request body
         const { name, capacity, facilities } = req.body;
 

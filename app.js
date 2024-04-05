@@ -19,21 +19,28 @@ app.use(cors()); // Enable CORS
 app.use(express.urlencoded({ extended: true })); // For parsing application/x-www-form-urlencoded
 
 app.use(express.json());
+app.use(cookieParser()); // Ajoutez ceci pour la gestion des cookies
 
-app.use('/auth', authRoutes);
-app.use('/meetingroom', meetingroomRoutes);
-app.use('/reservation', reservationRoutes);
 app.use('/style', express.static(__dirname + '/Style'));
 app.set('view engine', 'ejs');
 // Import other routes if necessary
 app.set('views', path.join(__dirname, 'views'));
-app.use(cookieParser()); // Ajoutez ceci pour la gestion des cookies
+
+app.use('/auth', authRoutes); // Auth routes probably don't need the authenticate middleware
+app.use(authenticate);
+
+app.use('/meetingroom',  meetingroomRoutes); // Use authenticate on routes that require it
+app.use('/reservation',reservationRoutes); // Use authenticate on routes that require it
+
+
+
 
 
 // Define route for the root path ("/")
 //app.get('/home', (req, res) => {   res.render('home',authenticate); });
-app.get('/home', (req, res) => {   res.render('home'); });
-
+app.get('/home', (req, res) => {
+    res.render('home'); // Ensure you have a 'home.ejs' file in your views directory
+});
 // Connect to MongoDB
 const MONGODB_URI = process.env.MONGODB_URI;
 const PORT = process.env.PORT;

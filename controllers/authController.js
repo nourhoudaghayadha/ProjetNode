@@ -62,8 +62,7 @@ exports.login = async (req, res, next) => {
         const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, {
             expiresIn: '90d',
         });
-
-        res.cookie('token', token, { httpOnly: true });
+        res.cookie('token', token, { httpOnly: true, sameSite: 'Lax' }); // For HTTP
         res.redirect('/home'); // Assurez-vous que cette route existe
     } catch (error) {
         console.error(error);

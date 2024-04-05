@@ -5,6 +5,8 @@ const reservationSchema = new mongoose.Schema({
     roomId: { type: mongoose.Schema.Types.ObjectId, ref: 'MeetingRoom', required: true },
     startTime: { type: Date, required: true },
     endTime: { type: Date, required: true },
+    confirmed: { type: Boolean, default: false },
+    confirmationToken: { type: String, required: true }
     // Autres champs et méthodes si nécessaire
 });
 

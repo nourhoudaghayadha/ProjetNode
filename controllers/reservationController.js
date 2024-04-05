@@ -4,7 +4,9 @@ const mongoose = require('mongoose');
 const moment = require('moment');
 const MeetingRoom = require('../models/meetingRoom');
 const simulatedCurrentTime = moment.utc("2024-03-29T23:30:00.000Z");
+const { v4: uuidv4 } = require('uuid');
 
+const nodemailer = require('nodemailer');
 
 const fetchActiveReservations = async (currentTime) => {
     return await Reservation.find({
@@ -46,10 +48,6 @@ exports.findRoomsByDate = async (req, res) => {
             _id: { $nin: reservedRoomIds }
         });
 
-        // Responding with the available rooms
-        // Adjust this according to whether you need to render a page or return JSON
-   //     res.status(200).json({ availableRooms }); // For API response
-        // For server-rendered page, use:
         res.render('meetingRoom/availableroom', { availableRooms: availableRooms });
 
     } catch (error) {
@@ -81,11 +79,6 @@ exports.getAvailableMeetingRooms = async (req, res) => {
     }
 };
 
-
-
-
-
-
 // Method to get all reservations
 exports.getAllReservations = async (req, res) => {
     try {
@@ -114,70 +107,94 @@ const checkForConflictingReservations = async (roomId, startTime, endTime) => {
     }
 };
 
-// exports.showReservationForm = async (req, res) => {
-//     try {
-//         const roomId = req.params.roomId;
-//         // Assuming the Room ID is valid and exists in your DB, fetch the room details
-//         const room = await MeetingRoom.findById(roomId);
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: process.env.EMAIL_USERNAME,
+        pass: process.env.EMAIL_PASSWORD
+    }
+});
 
-//         if (!room) {
-//             return res.status(404).send("Room not found");
-//         }
+const sendConfirmationEmail = async (userEmail, { roomId, date, startTime, endTime, confirmationLink }) => {
+    const mailOptions = {
+        from: process.env.EMAIL_USERNAME,
+        to: userEmail,
+        subject: 'Confirm Your Reservation',
+        text: `You've initiated a reservation for Room ID: ${roomId} on ${date} from ${startTime} to ${endTime}. Please confirm this reservation by clicking on the link: ${confirmationLink}`,
+    };
 
-//         // Render the reservation form template with room details
-//         res.render('reservation/form', { room });
-//     } catch (error) {
-//         console.error("Error showing reservation form:", error);
-//         res.status(500).send("Error loading the reservation form.");
-//     }
-// };
+    try {
+        await transporter.sendMail(mailOptions);
+        console.log('Confirmation email sent successfully');
+    } catch (error) {
+        console.error('Error sending confirmation email:', error);
+    }
+};
 
 exports.createReservation = async (req, res) => {
     try {
-        // userId is now available in req object due to the middleware
-        const userId = req.userId;
+        const userId = req.userId; // Assuming this is correctly set from the middleware
+        const { roomId, date, startTime, endTime } = req.body;
 
-        // Retrieve other data from the request body
-        const { roomId, startTime, endTime } = req.body;
+        // It seems you've missed to define `startDateTime` and `endDateTime` before using them
+        // Here's the fix:
+        const startDateTime = moment(date + 'T' + startTime).toDate();
+        const endDateTime = moment(date + 'T' + endTime).toDate();
 
-        // Check if userId, roomId, startTime, and endTime are valid
-        if (!mongoose.Types.ObjectId.isValid(userId)) {
-            throw new Error('userId is not a valid ObjectId.');
+        const confirmationToken = uuidv4(); // Generate a unique confirmation token
+
+        // Early validations
+        if (!req.user) {
+            return res.status(403).json({ message: "Pas de request" });
+        }
+        if (req.user.role !== 'user') {
+            return res.status(403).json({ message: "Accès refusé. Seuls les users sont autorisés à créer des réservations." });
+        }
+        if (!date || !startTime || !endTime) {
+            return res.status(400).json({ message: "Date, startTime, and endTime are required." });
         }
 
-        // Check if roomId is a valid ObjectId
-        if (!mongoose.Types.ObjectId.isValid(roomId)) {
-            throw new Error('roomId is not a valid ObjectId.');
-        }
-        if (!startTime || !endTime) {
-            throw new Error('startTime and endTime are required.');
+        // ObjectId validations
+        if (!mongoose.Types.ObjectId.isValid(userId) || !mongoose.Types.ObjectId.isValid(roomId)) {
+            throw new Error('Invalid ObjectId.');
         }
 
-        // Check for conflicting reservations
-        const conflictingReservations = await checkForConflictingReservations(roomId, startTime, endTime);
+        // Check for conflicting reservations (now using correctly defined `startDateTime` and `endDateTime`)
+        const conflictingReservations = await checkForConflictingReservations(roomId, startDateTime, endDateTime);
         if (conflictingReservations.length > 0) {
-            return res.status(400).json({ error: 'There are conflicting reservations for this room during the specified time period' });
+            return res.status(400).json({ error: 'There are conflicting reservations for this room during the specified time period.' });
         }
 
-        // Create a new reservation with userId
+        // Create a new reservation with combined datetime
         const newReservation = new Reservation({
-            userId: userId, // Set userId to the userId extracted from the token
-            roomId: roomId,
-            startTime: startTime,
-            endTime: endTime,
-            // Other reservation fields if necessary
+            userId,
+            roomId,
+            startTime: startDateTime,
+            endTime: endDateTime,
+            confirmationToken,
+            confirmed: false
         });
+        await newReservation.save();
 
         // Save the reservation to the database
-        const savedReservation = await newReservation.save();
+        const confirmationLink = `http://localhost:5000/reservation/confirm-reservation?token=${confirmationToken}`; // Adjust the domain as necessary
+        await sendConfirmationEmail(req.user.email, { 
+            roomId, 
+            date, 
+            startTime, 
+            endTime, 
+            confirmationLink 
+        });
+        console.log(process.env.EMAIL_USERNAME, process.env.EMAIL_PASSWORD);
 
-        // Respond with the newly created reservation
-        res.status(201).json(savedReservation);
+        res.status(200).json({ message: "Reservation initiated. Please check your email to confirm." });
     } catch (error) {
         console.error("Error creating reservation:", error);
-        res.status(500).json({ error: 'An error occurred while creating the reservation', message: error.message });
+        res.status(500).json({ error: 'An error occurred while creating the reservation.', message: error.message });
     }
 };
+
+
 
 
 exports.getReservationsByRoom = async (req, res) => {
@@ -195,19 +212,5 @@ exports.getReservationsByRoom = async (req, res) => {
         res.status(500).json({ error: 'An error occurred while fetching reservations' });
     }
 };
-// Refactored to be used internally, returns active reservations
-//const getActiveReservations = async (simulatedCurrentTime = moment.utc()) => {
-  //  try {
-        // Find active reservations
-   //     const activeReservations = await Reservation.find({
-   //         startTime: { $lte: simulatedCurrentTime.toDate() },
-   //         endTime: { $gt: simulatedCurrentTime.toDate() }
-   //     });
 
-   //     return activeReservations; // Return the active reservations data
-  //  } catch (error) {
-  //      console.error("Error fetching active reservations:", error);
-  //      throw new Error('An error occurred while fetching active reservations');
-  //  }
-//};
 
